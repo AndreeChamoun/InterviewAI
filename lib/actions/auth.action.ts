@@ -23,6 +23,7 @@ export async function signUp(params: SignUpParams) {
       success: true,
       message: 'User created successfully, please sign in',
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     console.error('Error creating a user', e);
     if (e.code === 'auth/email-already-exists') {

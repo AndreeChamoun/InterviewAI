@@ -38,15 +38,17 @@ const Agent = ({
   const [lastMessage, setLastMessage] = useState<string>('');
 
   useEffect(() => {
+    // Event listeners for call lifecycle events
     const onCallStart = () => {
-      setCallStatus(CallStatus.ACTIVE);
+      setCallStatus(CallStatus.ACTIVE); // Set call status to active when the call starts
     };
 
     const onCallEnd = () => {
-      setCallStatus(CallStatus.FINISHED);
+      setCallStatus(CallStatus.FINISHED); // Set call status to finished when the call ends
     };
 
     const onMessage = (message: Message) => {
+      // Handle incoming messages (e.g., transcripts from the AI)
       if (
         message.type === 'transcript' &&
         message.transcriptType === 'final'
@@ -55,24 +57,25 @@ const Agent = ({
           role: message.role,
           content: message.transcript,
         };
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]); // Append the new message to the message list
       }
     };
 
     const onSpeechStart = () => {
       console.log('speech start');
-      setIsSpeaking(true);
+      setIsSpeaking(true); // Indicate that the AI is speaking
     };
 
     const onSpeechEnd = () => {
       console.log('speech end');
-      setIsSpeaking(false);
+      setIsSpeaking(false); // Indicate that the AI has stopped speaking
     };
 
     const onError = (error: Error) => {
-      console.log('Error:', error);
+      console.log('Error:', error); // Log any errors that occur during the call
     };
 
+    // Attach event listeners to the vapi instance
     vapi.on('call-start', onCallStart);
     vapi.on('call-end', onCallEnd);
     vapi.on('message', onMessage);
@@ -80,6 +83,7 @@ const Agent = ({
     vapi.on('speech-end', onSpeechEnd);
     vapi.on('error', onError);
 
+    // Cleanup event listeners when the component unmounts
     return () => {
       vapi.off('call-start', onCallStart);
       vapi.off('call-end', onCallEnd);
@@ -91,10 +95,12 @@ const Agent = ({
   }, []);
 
   useEffect(() => {
+    // Update the last message whenever the messages array changes
     if (messages.length > 0) {
       setLastMessage(messages[messages.length - 1].content);
     }
 
+    // Function to generate feedback after the call ends
     const handleGenerateFeedback = async (
       messages: SavedMessage[]
     ) => {
@@ -103,23 +109,24 @@ const Agent = ({
       const { success, feedbackId: id } = await createFeedback({
         interviewId: interviewId!,
         userId: userId!,
-        transcript: messages,
+        transcript: messages, // Send the transcript of the conversation
         feedbackId,
       });
 
       if (success && id) {
-        router.push(`/interview/${interviewId}/feedback`);
+        router.push(`/interview/${interviewId}/feedback`); // Navigate to the feedback page
       } else {
         console.log('Error saving feedback');
-        router.push('/');
+        router.push('/'); // Navigate to the home page on failure
       }
     };
 
+    // Handle post-call actions based on the call type
     if (callStatus === CallStatus.FINISHED) {
       if (type === 'generate') {
-        router.push('/');
+        router.push('/'); // Navigate to the home page for "generate" type
       } else {
-        handleGenerateFeedback(messages);
+        handleGenerateFeedback(messages); // Generate feedback for other types
       }
     }
   }, [
@@ -133,9 +140,10 @@ const Agent = ({
   ]);
 
   const handleCall = async () => {
-    setCallStatus(CallStatus.CONNECTING);
+    setCallStatus(CallStatus.CONNECTING); // Set call status to connecting
 
     if (type === 'generate') {
+      // Start a call using the VAPI workflow for "generate" type
       await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
         variableValues: {
           username: userName,
@@ -143,6 +151,7 @@ const Agent = ({
         },
       });
     } else {
+      // Format questions for the call
       let formattedQuestions = '';
       if (questions) {
         formattedQuestions = questions
@@ -150,6 +159,7 @@ const Agent = ({
           .join('\n');
       }
 
+      // Start a call with the interviewer and formatted questions
       await vapi.start(interviewer, {
         variableValues: {
           questions: formattedQuestions,
@@ -159,8 +169,8 @@ const Agent = ({
   };
 
   const handleDisconnect = () => {
-    setCallStatus(CallStatus.FINISHED);
-    vapi.stop();
+    setCallStatus(CallStatus.FINISHED); // Set call status to finished
+    vapi.stop(); // Stop the call
   };
 
   return (
@@ -176,7 +186,8 @@ const Agent = ({
               height={54}
               className="object-cover"
             />
-            {isSpeaking && <span className="animate-speak" />}
+            {isSpeaking && <span className="animate-speak" />}{' '}
+            {/* Show animation when AI is speaking */}
           </div>
           <h3>AI Interviewer</h3>
         </div>
@@ -205,7 +216,7 @@ const Agent = ({
                 'transition-opacity duration-500 opacity-0',
                 'animate-fadeIn opacity-100'
               )}>
-              {lastMessage}
+              {lastMessage} {/* Display the last message */}
             </p>
           </div>
         </div>
@@ -226,15 +237,16 @@ const Agent = ({
             <span className="relative">
               {callStatus === 'INACTIVE' ||
               callStatus === 'FINISHED'
-                ? 'Call'
-                : '. . .'}
+                ? 'Call' // Show "Call" when inactive or finished
+                : '. . .'}{' '}
+              {/* Show loading dots when connecting */}
             </span>
           </button>
         ) : (
           <button
             className="btn-disconnect"
             onClick={() => handleDisconnect()}>
-            End
+            End {/* Show "End" button when the call is active */}
           </button>
         )}
       </div>

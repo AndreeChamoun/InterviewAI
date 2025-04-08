@@ -19,6 +19,7 @@ const Feedback = async ({ params }: RouteParams) => {
 
   const feedback = await getFeedbackByInterviewId({
     interviewId: id,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
     userId: user?.id!,
   });
 

@@ -1,17 +1,29 @@
-import Agent from '@/components/Agent';
-import DisplayTechIcons from '@/components/DisplayTechIcons';
-import { getCurrentUser } from '@/lib/actions/auth.action';
-import { getInterviewById } from '@/lib/actions/general.action';
-import { getRandomInterviewCover } from '@/lib/utils';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
-const page = async ({ params }: RouteParams) => {
-  const { id } = await params;
-  const user = await getCurrentUser();
-  const interview = await getInterviewById(id);
+import Agent from '@/components/Agent';
+import { getRandomInterviewCover } from '@/lib/utils';
 
+import DisplayTechIcons from '@/components/DisplayTechIcons';
+import { getCurrentUser } from '@/lib/actions/auth.action';
+import {
+  getFeedbackByInterviewId,
+  getInterviewById,
+} from '@/lib/actions/general.action';
+
+const InterviewDetails = async ({ params }: RouteParams) => {
+  const { id } = await params;
+
+  const user = await getCurrentUser();
+
+  const interview = await getInterviewById(id);
   if (!interview) redirect('/');
+
+  const feedback = await getFeedbackByInterviewId({
+    interviewId: id,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    userId: user?.id!,
+  });
 
   return (
     <>
@@ -29,20 +41,26 @@ const page = async ({ params }: RouteParams) => {
               {interview.role} Interview
             </h3>
           </div>
+
           <DisplayTechIcons techStack={interview.techstack} />
         </div>
-        <p className="bg-dark-200 px-4 py-2 rounded-lg h-fit capitalize">
+
+        <p className="bg-dark-200 px-4 py-2 rounded-lg h-fit">
           {interview.type}
         </p>
       </div>
+
       <Agent
-        userName={user?.name || ''}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+        userName={user?.name!}
         userId={user?.id}
         interviewId={id}
         type="interview"
+        questions={interview.questions}
+        feedbackId={feedback?.id}
       />
     </>
   );
 };
 
-export default page;
+export default InterviewDetails;
